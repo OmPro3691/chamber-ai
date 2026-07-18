@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # UI Optimization for Mobile Phone
 st.set_page_config(page_title="Chamber AI Elite", layout="centered", initial_sidebar_state="collapsed")
@@ -20,7 +20,7 @@ if "sudden_changes" not in st.session_state:
 # 2. Sidebar - Settings Menu
 with st.sidebar:
     st.header("⚙️ Core Controls")
-    api_key = st.text_input("Gemini API Key:", type="password")
+    api_key = st.text_input("Gemini API Key (AQ. format):", type="password")
     role = st.radio("Identity Stance:", ("Kiren Rijiju (Cabinet Minister - Ruling)", "Normal Member of Parliament (Ruling Stance)"))
     language = st.selectbox("Language Framework:", ("English", "Parliamentary Hindi", "Hinglish"))
     aggressiveness = st.selectbox("Debate Attack Style:", ("Assertive & Firm", "Aggressive & Dominating", "Diplomatic & Calm"))
@@ -48,9 +48,14 @@ if not api_key:
     st.warning("👈 Slide open the sidebar menu (top left) and enter your Gemini API Key to unlock the engine.")
     st.stop()
 
-genai.configure(api_key=api_key)
+# Initialize the new Google GenAI Client
+try:
+    client = genai.Client(api_key=api_key)
+except Exception as e:
+    st.error(f"Authentication Error: {e}")
+    st.stop()
 
-# 3. Master AI Instructions (Upgraded for Internal Legal Searching)
+# 3. Master AI Instructions
 master_system_instruction = f"""
 You are the elite live speech strategist and constitutional fact-checker for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
 
@@ -117,12 +122,6 @@ with tab1:
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
-                # REMOVED: Google Search tools parameter removed to prevent 401 OAuth crashes
-                model = genai.GenerativeModel(
-                    'gemini-1.5-pro', 
-                    system_instruction=master_system_instruction
-                )
-                
                 recent_memory = st.session_state.used_arguments[-3:] if st.session_state.used_arguments else "None."
                 
                 payload = f"""
@@ -140,7 +139,12 @@ with tab1:
                 """
                 
                 with st.spinner("⚡ Fact-checking internal legal databases..."):
-                    response = model.generate_content(payload)
+                    # Using the new Google GenAI syntax
+                    response = client.models.generate_content(
+                        model='gemini-1.5-pro', 
+                        contents=payload,
+                        config={'system_instruction': master_system_instruction}
+                    )
                     st.session_state.latest_rebuttal = response.text
                     st.session_state.used_arguments.append(response.text)
                     st.session_state.last_processed_hash = current_hash
@@ -157,10 +161,11 @@ with tab4:
     manual_query = st.text_input("Type specific question:")
     if manual_query:
         try:
-            # REMOVED: Google Search tools parameter removed to prevent 401 OAuth crashes
-            flash_model = genai.GenerativeModel('gemini-1.5-flash')
             with st.spinner("Searching internal archives..."):
-                res = flash_model.generate_content(f"You are a strict constitutional expert. Fact check this using specific legal citations: {manual_query}")
+                res = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=f"You are a strict constitutional expert. Fact check this using specific legal citations: {manual_query}"
+                )
                 st.info(res.text)
         except Exception as e:
             st.error(f"Search Error: {e}")
