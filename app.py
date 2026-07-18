@@ -159,7 +159,7 @@ with tab4:
     if manual_query:
         try:
             # FIX APPLIED HERE AS WELL
-            flash_model = genai.GenerativeModel('gemini-1.5-flash', tools=[{"google_search": {}}])
+           flash_model = genai.GenerativeModel('gemini-1.5-flash', tools='google_search_retrieval')
             with st.spinner("Searching..."):
                 res = flash_model.generate_content(f"Fact check: {manual_query}")
                 st.info(res.text)
