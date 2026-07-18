@@ -5,6 +5,18 @@ import google.generativeai as genai
 st.set_page_config(page_title="Chamber AI Elite", layout="centered", initial_sidebar_state="collapsed")
 st.title("🏛️ Parliament AI: Evolving Engine")
 
+# App Memory Initialization (Must be before the sidebar)
+if "used_arguments" not in st.session_state:
+    st.session_state.used_arguments = []
+if "last_processed_hash" not in st.session_state:
+    st.session_state.last_processed_hash = ""
+if "latest_rebuttal" not in st.session_state:
+    st.session_state.latest_rebuttal = "System initialized. Waiting for input..."
+if "bill_draft_text" not in st.session_state:
+    st.session_state.bill_draft_text = ""
+if "sudden_changes" not in st.session_state:
+    st.session_state.sudden_changes = [] # New memory bank for multiple rule changes
+
 # Sidebar - Settings Menu
 with st.sidebar:
     st.header("⚙️ Core Controls")
@@ -14,15 +26,31 @@ with st.sidebar:
     aggressiveness = st.selectbox("Debate Attack Style:", ("Assertive & Firm", "Aggressive & Dominating", "Diplomatic & Calm"))
     
     st.markdown("---")
-    st.header("🚨 Sudden Scenario Switch")
-    scenario_override = st.text_input(
-        "Urgent Rule/Format Shift:", 
-        placeholder="e.g., 'The chair changed this to an Ordinance'"
+    st.header("🚨 Sudden Scenario Shifts")
+    
+    # Input box for a new rule
+    new_change = st.text_input(
+        "Add New Rule/Format Shift:", 
+        placeholder="e.g., 'The chair changed this to an Ordinance'",
+        key="new_change_input"
     )
+    
+    # Button to add it to the list
+    if st.button("➕ Add Shift"):
+        if new_change:
+            st.session_state.sudden_changes.append(new_change)
+            st.success("Shift added!")
+            
+    # Display the active list of changes on your phone screen
+    if st.session_state.sudden_changes:
+        st.markdown("**Active Rule Changes:**")
+        for i, change in enumerate(st.session_state.sudden_changes):
+            st.markdown(f"{i+1}. {change}")
     
     if st.button("🧹 Reset Argument Stage"):
         st.session_state.used_arguments = []
         st.session_state.last_processed_hash = ""
+        st.session_state.sudden_changes = [] # This now clears the rule changes too
         st.success("Memory wiped!")
 
 if not api_key:
@@ -31,17 +59,7 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# App Memory Initialization
-if "used_arguments" not in st.session_state:
-    st.session_state.used_arguments = []
-if "last_processed_hash" not in st.session_state:
-    st.session_state.last_processed_hash = ""
-if "latest_rebuttal" not in st.session_state:
-    st.session_state.latest_rebuttal = "System initialized. Waiting for input..."
-if "bill_draft_text" not in st.session_state:
-    st.session_state.bill_draft_text = ""
-
-# The Master AI Instructions
+# The Master AI Instructions (Updated to expect multiple shifts)
 master_system_instruction = f"""
 You are the elite live speech strategist for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
 
@@ -49,7 +67,7 @@ YOUR COMMANDS:
 1. ARGUMENT EVOLUTION: Review [PREVIOUSLY DEPLOYED POINTS]. Do not repeat them verbatim. Evolve and escalate the argument logically.
 2. GOOGLE SEARCH GROUNDING: You MUST double-check every legal clause, act year, and statistic using Google Search.
 3. PROOF REQUIREMENT: Append a '[VERIFIABLE SOURCE/PROOF]' tag to every factual assertion, citing the specific Act section or Supreme Court judgment.
-4. LIVE ADAPTATION: Fully integrate [SUDDEN SCENARIO SHIFT] and [OFFICIAL BILL/ORDINANCE DRAFT].
+4. LIVE ADAPTATION: Fully integrate [ACTIVE SCENARIO SHIFTS] and [OFFICIAL BILL/ORDINANCE DRAFT]. All arguments must strictly adhere to the active shifts.
 
 OUTPUT PROTOCOL (in {language}, {aggressiveness} tone):
 - [SPEAKER & STANCE]: Who is talking & Core Point.
@@ -83,8 +101,11 @@ with tab1:
         ambient = st.session_state.ambient_input
         whisper = st.session_state.whisper_input
         
-        # This hash locks in the current state so the AI doesn't waste credits repeating itself
-        current_hash = hash(ambient + whisper + scenario_override + st.session_state.bill_draft_text)
+        # Turn the list of changes into a single text block for the AI to read
+        active_shifts_text = "\n- ".join(st.session_state.sudden_changes) if st.session_state.sudden_changes else "Standard parliamentary rules apply."
+        
+        # Lock in the current state so the AI notices when a new rule is added
+        current_hash = hash(ambient + whisper + active_shifts_text + st.session_state.bill_draft_text)
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
@@ -98,7 +119,9 @@ with tab1:
                 
                 payload = f"""
                 [OFFICIAL DRAFT]: {st.session_state.bill_draft_text}
-                [SCENARIO SHIFT]: {scenario_override}
+                [ACTIVE SCENARIO SHIFTS]: 
+                {active_shifts_text}
+                
                 [AMBIENT TRANSCRIPT]: {ambient}
                 [USER WHISPERS]: {whisper}
                 [PREVIOUSLY DEPLOYED POINTS]: {recent_memory}
