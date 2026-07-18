@@ -5,7 +5,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="Chamber AI Elite", layout="centered", initial_sidebar_state="collapsed")
 st.title("🏛️ Parliament AI: Evolving Engine")
 
-# App Memory Initialization (Must be before the sidebar)
+# 1. App Memory Initialization
 if "used_arguments" not in st.session_state:
     st.session_state.used_arguments = []
 if "last_processed_hash" not in st.session_state:
@@ -15,9 +15,9 @@ if "latest_rebuttal" not in st.session_state:
 if "bill_draft_text" not in st.session_state:
     st.session_state.bill_draft_text = ""
 if "sudden_changes" not in st.session_state:
-    st.session_state.sudden_changes = [] # New memory bank for multiple rule changes
+    st.session_state.sudden_changes = [] 
 
-# Sidebar - Settings Menu
+# 2. Sidebar - Settings Menu
 with st.sidebar:
     st.header("⚙️ Core Controls")
     api_key = st.text_input("Gemini API Key:", type="password")
@@ -27,31 +27,22 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("🚨 Sudden Scenario Shifts")
-    
-    # Input box for a new rule
-    new_change = st.text_input(
-        "Add New Rule/Format Shift:", 
-        placeholder="e.g., 'The chair changed this to an Ordinance'",
-        key="new_change_input"
-    )
-    
-    # Button to add it to the list
+    new_change = st.text_input("Add New Rule/Format Shift:", key="new_change_input")
     if st.button("➕ Add Shift"):
         if new_change:
             st.session_state.sudden_changes.append(new_change)
             st.success("Shift added!")
             
-    # Display the active list of changes on your phone screen
     if st.session_state.sudden_changes:
         st.markdown("**Active Rule Changes:**")
         for i, change in enumerate(st.session_state.sudden_changes):
             st.markdown(f"{i+1}. {change}")
     
-    if st.button("🧹 Reset Argument Stage"):
+    if st.button("🧹 Factory Reset (Wipe All)"):
         st.session_state.used_arguments = []
         st.session_state.last_processed_hash = ""
-        st.session_state.sudden_changes = [] # This now clears the rule changes too
-        st.success("Memory wiped!")
+        st.session_state.sudden_changes = [] 
+        st.success("Complete memory wipe successful!")
 
 if not api_key:
     st.warning("👈 Slide open the sidebar menu (top left) and enter your Gemini API Key to unlock the engine.")
@@ -59,15 +50,16 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# The Master AI Instructions (Updated to expect multiple shifts)
+# 3. Master AI Instructions
 master_system_instruction = f"""
 You are the elite live speech strategist for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
 
 YOUR COMMANDS:
-1. ARGUMENT EVOLUTION: Review [PREVIOUSLY DEPLOYED POINTS]. Do not repeat them verbatim. Evolve and escalate the argument logically.
-2. GOOGLE SEARCH GROUNDING: You MUST double-check every legal clause, act year, and statistic using Google Search.
-3. PROOF REQUIREMENT: Append a '[VERIFIABLE SOURCE/PROOF]' tag to every factual assertion, citing the specific Act section or Supreme Court judgment.
-4. LIVE ADAPTATION: Fully integrate [ACTIVE SCENARIO SHIFTS] and [OFFICIAL BILL/ORDINANCE DRAFT]. All arguments must strictly adhere to the active shifts.
+1. ANTI-REPETITION PROTOCOL: Review both [IMPORTED LONG-TERM MEMORY] and [CURRENT SESSION MEMORY]. You are strictly FORBIDDEN from repeating any argument, constitutional article, or statistic found in these memory banks. 
+2. ARGUMENT EVOLUTION: You must evolve the debate. Find fresh angles, deeper administrative logic, or unmentioned historical precedents.
+3. GOOGLE SEARCH GROUNDING: Double-check every legal clause and statistic using Google Search.
+4. PROOF REQUIREMENT: Append a '[VERIFIABLE SOURCE/PROOF]' tag citing the specific Act section or Supreme Court judgment.
+5. LIVE ADAPTATION: Fully integrate [ACTIVE SCENARIO SHIFTS] and [OFFICIAL BILL/ORDINANCE DRAFT].
 
 OUTPUT PROTOCOL (in {language}, {aggressiveness} tone):
 - [SPEAKER & STANCE]: Who is talking & Core Point.
@@ -76,9 +68,10 @@ OUTPUT PROTOCOL (in {language}, {aggressiveness} tone):
 - [READ OUT LOUD]: A 2-sentence script for the MP to speak.
 """
 
-# The 3-Tab Mobile Layout
-tab1, tab2, tab3 = st.tabs(["🚀 Dashboard", "📜 Draft Upload", "🔍 Fact Engine"])
+# 4. The 4-Tab Mobile Layout
+tab1, tab2, tab3, tab4 = st.tabs(["🚀 Dashboard", "📜 Draft Upload", "💾 Memory Vault", "🔍 Fact Engine"])
 
+# --- TAB 2: Draft Upload ---
 with tab2:
     st.header("📜 Live Draft Sync")
     st.session_state.bill_draft_text = st.text_area(
@@ -86,6 +79,26 @@ with tab2:
         height=300
     )
 
+# --- TAB 3: Long-Term Memory Vault ---
+with tab3:
+    st.header("💾 The Memory Vault")
+    st.markdown("Use this to prevent the AI from repeating demo session arguments during the final match.")
+    
+    imported_memory = st.text_area(
+        "📥 Import Past Memory (Paste your demo session notes here):", 
+        height=150,
+        placeholder="Paste previous arguments here on the day of the final session..."
+    )
+    
+    st.markdown("---")
+    st.markdown("📤 **Export Current Session Memory:**")
+    st.caption("At the end of the day, copy all text from this box and save it in your phone's Notes app.")
+    
+    # Combine all current session arguments into one block of text
+    current_session_text = "\n---\n".join(st.session_state.used_arguments) if st.session_state.used_arguments else "No arguments deployed yet."
+    st.text_area("Copy this text:", value=current_session_text, height=150, disabled=True)
+
+# --- TAB 1: Live Dashboard ---
 with tab1:
     st.markdown("### 🔊 Step 1: Input Stream")
     ambient_feed = st.text_area("Room Feed (Live Audio):", height=80, key="ambient_input")
@@ -93,19 +106,16 @@ with tab1:
 
     st.markdown("---")
     st.markdown("### ⚡ Step 2: Live Strategy")
-    
     output_container = st.empty()
 
     @st.fragment(run_every=7)
     def run_analysis_engine():
         ambient = st.session_state.ambient_input
         whisper = st.session_state.whisper_input
-        
-        # Turn the list of changes into a single text block for the AI to read
         active_shifts_text = "\n- ".join(st.session_state.sudden_changes) if st.session_state.sudden_changes else "Standard parliamentary rules apply."
         
-        # Lock in the current state so the AI notices when a new rule is added
-        current_hash = hash(ambient + whisper + active_shifts_text + st.session_state.bill_draft_text)
+        # Lock in the current state including the imported memory
+        current_hash = hash(ambient + whisper + active_shifts_text + st.session_state.bill_draft_text + imported_memory)
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
@@ -119,12 +129,16 @@ with tab1:
                 
                 payload = f"""
                 [OFFICIAL DRAFT]: {st.session_state.bill_draft_text}
-                [ACTIVE SCENARIO SHIFTS]: 
-                {active_shifts_text}
+                [ACTIVE SCENARIO SHIFTS]: {active_shifts_text}
                 
                 [AMBIENT TRANSCRIPT]: {ambient}
                 [USER WHISPERS]: {whisper}
-                [PREVIOUSLY DEPLOYED POINTS]: {recent_memory}
+                
+                [IMPORTED LONG-TERM MEMORY (DO NOT REPEAT)]: 
+                {imported_memory if imported_memory else "No past sessions imported."}
+                
+                [CURRENT SESSION MEMORY (DO NOT REPEAT)]: 
+                {recent_memory}
                 """
                 
                 with st.spinner("⚡ Fact-checking and escalating arguments..."):
@@ -139,7 +153,8 @@ with tab1:
 
     run_analysis_engine()
 
-with tab3:
+# --- TAB 4: Fact Engine ---
+with tab4:
     st.header("🔍 Manual Fact Engine")
     manual_query = st.text_input("Type specific question:")
     if manual_query:
