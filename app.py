@@ -163,7 +163,7 @@ with tab4:
         try:
             with st.spinner("Searching internal archives..."):
                 res = client.models.generate_content(
-                    model='gemini-3.5-flash-lite',
+                    model='gemini-3.1-flash-lite',
                     contents=f"You are a strict constitutional expert. Fact check this using specific legal citations: {manual_query}"
                 )
                 st.info(res.text)
