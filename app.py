@@ -50,20 +50,20 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# 3. Master AI Instructions
+# 3. Master AI Instructions (Upgraded for Internal Legal Searching)
 master_system_instruction = f"""
-You are the elite live speech strategist for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
+You are the elite live speech strategist and constitutional fact-checker for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
 
 YOUR COMMANDS:
 1. ANTI-REPETITION PROTOCOL: Review both [IMPORTED LONG-TERM MEMORY] and [CURRENT SESSION MEMORY]. You are strictly FORBIDDEN from repeating any argument, constitutional article, or statistic found in these memory banks. 
 2. ARGUMENT EVOLUTION: You must evolve the debate. Find fresh angles, deeper administrative logic, or unmentioned historical precedents.
-3. GOOGLE SEARCH GROUNDING: Double-check every legal clause and statistic using Google Search.
-4. PROOF REQUIREMENT: Append a '[VERIFIABLE SOURCE/PROOF]' tag citing the specific Act section or Supreme Court judgment.
+3. CONSTITUTIONAL FACT-CHECKING: You possess deep training data on Indian Law. Cross-reference every opposition claim against the actual Constitution of India, the Citizenship Act of 1955, and the Assam Accord.
+4. STRICT PROOF REQUIREMENT: Append a '[LEGAL CITATION]' tag citing the exact Article, Section, or historical date from your internal knowledge base to prove your point. Do not hallucinate laws.
 5. LIVE ADAPTATION: Fully integrate [ACTIVE SCENARIO SHIFTS] and [OFFICIAL BILL/ORDINANCE DRAFT].
 
 OUTPUT PROTOCOL (in {language}, {aggressiveness} tone):
 - [SPEAKER & STANCE]: Who is talking & Core Point.
-- [FACT-CHECK]: [ACCURATE / MISLEADING / FALSE] + Verifiable Source/Proof from Search.
+- [FACT-CHECK]: [ACCURATE / MISLEADING / FALSE] + Exact Legal Citation.
 - [EVOLVED COUNTER]: 2 bullet points of advanced defense.
 - [READ OUT LOUD]: A 2-sentence script for the MP to speak.
 """
@@ -117,11 +117,10 @@ with tab1:
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
-                # FIXED: The exact dictionary format required by the Google SDK to activate Search
+                # REMOVED: Google Search tools parameter removed to prevent 401 OAuth crashes
                 model = genai.GenerativeModel(
                     'gemini-1.5-pro', 
-                    system_instruction=master_system_instruction,
-                    tools=[{"google_search_retrieval": {}}]
+                    system_instruction=master_system_instruction
                 )
                 
                 recent_memory = st.session_state.used_arguments[-3:] if st.session_state.used_arguments else "None."
@@ -140,7 +139,7 @@ with tab1:
                 {recent_memory}
                 """
                 
-                with st.spinner("⚡ Fact-checking and escalating arguments..."):
+                with st.spinner("⚡ Fact-checking internal legal databases..."):
                     response = model.generate_content(payload)
                     st.session_state.latest_rebuttal = response.text
                     st.session_state.used_arguments.append(response.text)
@@ -158,13 +157,10 @@ with tab4:
     manual_query = st.text_input("Type specific question:")
     if manual_query:
         try:
-            # FIXED: The exact dictionary format required by the Google SDK to activate Search
-            flash_model = genai.GenerativeModel(
-                'gemini-1.5-flash', 
-                tools=[{"google_search_retrieval": {}}]
-            )
-            with st.spinner("Searching..."):
-                res = flash_model.generate_content(f"Fact check: {manual_query}")
+            # REMOVED: Google Search tools parameter removed to prevent 401 OAuth crashes
+            flash_model = genai.GenerativeModel('gemini-1.5-flash')
+            with st.spinner("Searching internal archives..."):
+                res = flash_model.generate_content(f"You are a strict constitutional expert. Fact check this using specific legal citations: {manual_query}")
                 st.info(res.text)
         except Exception as e:
             st.error(f"Search Error: {e}")
