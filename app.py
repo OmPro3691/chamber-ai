@@ -119,10 +119,10 @@ with tab1:
             try:
                 # FIX APPLIED HERE: tools is now a list containing a dictionary
                 model = genai.GenerativeModel(
-                    'gemini-1.5-pro', 
-                    system_instruction=master_system_instruction,
-                    tools=[{"google_search": {}}]
-                )
+    'gemini-1.5-pro', 
+    system_instruction=master_system_instruction,
+    tools='google_search_retrieval'
+)
                 
                 recent_memory = st.session_state.used_arguments[-3:] if st.session_state.used_arguments else "None."
                 
