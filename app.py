@@ -141,7 +141,7 @@ with tab1:
                 with st.spinner("⚡ Fact-checking internal legal databases..."):
                     # Generate response using the latest genai syntax
                     response = client.models.generate_content(
-                        model='gemini-3.5-pro', 
+                        model='gemini-3.1-pro', 
                         contents=payload,
                         config={'system_instruction': master_system_instruction}
                     )
@@ -163,7 +163,7 @@ with tab4:
         try:
             with st.spinner("Searching internal archives..."):
                 res = client.models.generate_content(
-                    model='gemini-3.1-flash-lite',
+                    model='gemini-3.5-flash',
                     contents=f"You are a strict constitutional expert. Fact check this using specific legal citations: {manual_query}"
                 )
                 st.info(res.text)
