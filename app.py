@@ -1,11 +1,11 @@
 import streamlit as st
 from google import genai
 
-# UI Optimization for Mobile Phone
+# 1. UI Optimization for Mobile Phone
 st.set_page_config(page_title="Chamber AI Elite", layout="centered", initial_sidebar_state="collapsed")
-st.title("🏛️ Parliament AI: Evolving Engine")
+st.title("🏛️ Parliament AI: Final Engine")
 
-# 1. App Memory Initialization
+# 2. App Memory Initialization
 if "used_arguments" not in st.session_state:
     st.session_state.used_arguments = []
 if "last_processed_hash" not in st.session_state:
@@ -17,10 +17,10 @@ if "bill_draft_text" not in st.session_state:
 if "sudden_changes" not in st.session_state:
     st.session_state.sudden_changes = [] 
 
-# 2. Sidebar - Settings Menu
+# 3. Sidebar - Settings Menu
 with st.sidebar:
     st.header("⚙️ Core Controls")
-    api_key = st.text_input("Gemini API Key (AQ. format):", type="password")
+    api_key = st.text_input("Gemini API Key (AIza...):", type="password")
     role = st.radio("Identity Stance:", ("Kiren Rijiju (Cabinet Minister - Ruling)", "Normal Member of Parliament (Ruling Stance)"))
     language = st.selectbox("Language Framework:", ("English", "Parliamentary Hindi", "Hinglish"))
     aggressiveness = st.selectbox("Debate Attack Style:", ("Assertive & Firm", "Aggressive & Dominating", "Diplomatic & Calm"))
@@ -48,14 +48,14 @@ if not api_key:
     st.warning("👈 Slide open the sidebar menu (top left) and enter your Gemini API Key to unlock the engine.")
     st.stop()
 
-# Initialize the new Google GenAI Client
+# 4. Initialize the Google GenAI Client
 try:
     client = genai.Client(api_key=api_key)
 except Exception as e:
     st.error(f"Authentication Error: {e}")
     st.stop()
 
-# 3. Master AI Instructions
+# 5. Master AI Instructions
 master_system_instruction = f"""
 You are the elite live speech strategist and constitutional fact-checker for {role} in a Youth Parliament debate regarding a CAA and NRC framework. 
 
@@ -73,7 +73,7 @@ OUTPUT PROTOCOL (in {language}, {aggressiveness} tone):
 - [READ OUT LOUD]: A 2-sentence script for the MP to speak.
 """
 
-# 4. The 4-Tab Mobile Layout
+# 6. The 4-Tab Mobile Layout
 tab1, tab2, tab3, tab4 = st.tabs(["🚀 Dashboard", "📜 Draft Upload", "💾 Memory Vault", "🔍 Fact Engine"])
 
 # --- TAB 2: Draft Upload ---
@@ -139,7 +139,7 @@ with tab1:
                 """
                 
                 with st.spinner("⚡ Fact-checking internal legal databases..."):
-                    # Using the new Google GenAI syntax
+                    # Generate response using the latest genai syntax
                     response = client.models.generate_content(
                         model='gemini-1.5-pro', 
                         contents=payload,
