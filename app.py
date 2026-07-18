@@ -141,7 +141,7 @@ with tab1:
                 with st.spinner("⚡ Fact-checking internal legal databases..."):
                     # Generate response using the latest genai syntax
                     response = client.models.generate_content(
-                        model='gemini-3.1-pro', 
+                        model='gemini-3.5-flash', 
                         contents=payload,
                         config={'system_instruction': master_system_instruction}
                     )
