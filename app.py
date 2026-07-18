@@ -117,12 +117,12 @@ with tab1:
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
-                # FIX APPLIED HERE: tools is now a list containing a dictionary
+                # FIXED: The exact dictionary format required by the Google SDK to activate Search
                 model = genai.GenerativeModel(
-    'gemini-1.5-pro', 
-    system_instruction=master_system_instruction,
-    tools='google_search_retrieval'
-)
+                    'gemini-1.5-pro', 
+                    system_instruction=master_system_instruction,
+                    tools=[{"google_search_retrieval": {}}]
+                )
                 
                 recent_memory = st.session_state.used_arguments[-3:] if st.session_state.used_arguments else "None."
                 
@@ -158,8 +158,11 @@ with tab4:
     manual_query = st.text_input("Type specific question:")
     if manual_query:
         try:
-            # FIX APPLIED HERE AS WELL
-           flash_model = genai.GenerativeModel('gemini-1.5-flash', tools='google_search_retrieval')
+            # FIXED: The exact dictionary format required by the Google SDK to activate Search
+            flash_model = genai.GenerativeModel(
+                'gemini-1.5-flash', 
+                tools=[{"google_search_retrieval": {}}]
+            )
             with st.spinner("Searching..."):
                 res = flash_model.generate_content(f"Fact check: {manual_query}")
                 st.info(res.text)
