@@ -94,7 +94,6 @@ with tab3:
     st.markdown("📤 **Export Current Session Memory:**")
     st.caption("At the end of the day, copy all text from this box and save it in your phone's Notes app.")
     
-    # Combine all current session arguments into one block of text
     current_session_text = "\n---\n".join(st.session_state.used_arguments) if st.session_state.used_arguments else "No arguments deployed yet."
     st.text_area("Copy this text:", value=current_session_text, height=150, disabled=True)
 
@@ -114,15 +113,15 @@ with tab1:
         whisper = st.session_state.whisper_input
         active_shifts_text = "\n- ".join(st.session_state.sudden_changes) if st.session_state.sudden_changes else "Standard parliamentary rules apply."
         
-        # Lock in the current state including the imported memory
         current_hash = hash(ambient + whisper + active_shifts_text + st.session_state.bill_draft_text + imported_memory)
         
         if (ambient or whisper) and current_hash != st.session_state.last_processed_hash:
             try:
+                # FIX APPLIED HERE: tools is now a list containing a dictionary
                 model = genai.GenerativeModel(
                     'gemini-1.5-pro', 
                     system_instruction=master_system_instruction,
-                    tools="google_search"
+                    tools=[{"google_search": {}}]
                 )
                 
                 recent_memory = st.session_state.used_arguments[-3:] if st.session_state.used_arguments else "None."
@@ -159,7 +158,8 @@ with tab4:
     manual_query = st.text_input("Type specific question:")
     if manual_query:
         try:
-            flash_model = genai.GenerativeModel('gemini-1.5-flash', tools="google_search")
+            # FIX APPLIED HERE AS WELL
+            flash_model = genai.GenerativeModel('gemini-1.5-flash', tools=[{"google_search": {}}])
             with st.spinner("Searching..."):
                 res = flash_model.generate_content(f"Fact check: {manual_query}")
                 st.info(res.text)
